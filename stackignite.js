@@ -14,43 +14,81 @@ function drawBar(ctx, x, y, width, height, clearWidth, color, text) {
     ctx.clearRect(x + width, y, clearWidth - x, height);
 }
 
+function renderChildrenByCall(
+    ctx, 
+    canvasWidth, 
+    canvasHeight, 
+    startX,
+    spanWidth,
+    children, 
+    currentLine
+){
+    if(!children || children.length === 0) return;
+
+    let currentY = canvasHeight - (lineHeight * currentLine);
+    const length = spanWidth / children.length;
+    if (length < 1){
+        drawBar(
+            ctx, 
+            startX, 
+            currentY, 
+            spanWidth, 
+            lineHeight, 
+            canvasWidth, 
+            "green", 
+            "..."
+        );
+    }
+
+    let xOffset = startX;
+    for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+
+        const x = xOffset;
+        xOffset = xOffset + length;
+
+        drawBar(
+            ctx, 
+            x, 
+            currentY, 
+            length, 
+            lineHeight, 
+            canvasWidth, 
+            "green", 
+            child.name
+        );
+
+        renderChildrenByCall(
+            ctx,  
+            canvasWidth, 
+            canvasHeight,
+            x, 
+            length,
+            child.children, 
+            currentLine + 1
+        );
+    }
+}
+
 function renderByCall(canvas, data) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
+
+    const ctx = canvas.getContext("2d");
     console.log({
         canvasWidth,
-        canvasHeight
+        canvasHeight,
+        h: ctx.height
     });
-    const height = 20;
-    const ctx = canvas.getContext("2d");
-    const size = canvasWidth;
-    const text = data.name;
-    drawBar(ctx, 0, canvasHeight - height, size, height, canvasWidth, "red", text);
-    let children = data.children;
-    let currentLine = 1;
-    const startTimestamp = data.entryTime;
-    const endTimestamp = data.exitTime;
-    const executionTime = endTimestamp - startTimestamp;
-    while (children.length > 0) {
-        currentLine++;
-        let currentY = canvasHeight - (height * currentLine);
-        let newChildren = [];
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            const childEntryTime = child.entryTime;
-            const childExitTime = child.exitTime;
-            const x = ((childEntryTime - startTimestamp) / executionTime) * canvasWidth;
-            let childWidth = ((childExitTime - childEntryTime) / executionTime) * canvasWidth;
-            if (childWidth === 0){ // Less then 1 pixel, skip
-                continue;
-            }
-            drawBar(ctx, x, currentY, childWidth, height, canvasWidth, "green", child.name);
-            if(child.children){
-                newChildren = newChildren.concat(child.children);
-            }
-        }
-        children = newChildren;
-    }
+    renderChildrenByCall(
+        ctx, 
+        canvasWidth, 
+        canvasHeight,
+        0,
+        canvasWidth,
+        [data], 
+        0
+    );
 }
 
 function renderChildrenByTimestamp(
@@ -101,7 +139,6 @@ function renderChildrenByTimestamp(
             currentLine + 1
         );
     }
-    
 }
 
 function renderByTimestamp(canvas, data) {
@@ -132,10 +169,10 @@ function renderByTimestamp(canvas, data) {
 
 (() => {
     const canvas = document.getElementById("flamegraph");
-    renderByTimestamp(canvas, data);
+    renderByCall(canvas, data);
 })();
 
 function resizeCanvas() {
     const canvas = document.getElementById("flamegraph");
-    renderByTimestamp(canvas, data);
+    renderByCall(canvas, data);
 }
