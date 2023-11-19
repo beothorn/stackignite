@@ -45,6 +45,17 @@ function drawBar(
     ctx.clearRect(x + width, y, clearWidth - x, height);
 }
 
+function resizeLines(lines, previousCanvasWidth, canvasWidth){
+    for (let currentLine = 0; currentLine < lines.length; currentLine++) {
+        const line = lines[currentLine];
+        for (let i = 0; i < line.length; i++) {
+            const entry = line[i];
+            entry.x = (entry.x / previousCanvasWidth) * canvasWidth;
+            entry.length = (entry.length / previousCanvasWidth) * canvasWidth;
+        }
+    }
+}
+
 function renderLines(
     ctx, 
     canvasWidth, 
@@ -239,14 +250,26 @@ function getMousePos(canvas, evt) {
     };
 }
 
-function loadData(canvasId, stackData){
-    const canvas = document.getElementById(canvasId);
+function loadData(canvasHolderId, stackData){
+    const parentDiv = document.getElementById(canvasHolderId);
+
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    canvas.id = canvasHolderId+"Canvas";
+    
+    // Set canvas size to match the parent
+    canvas.width = parentDiv.clientWidth;
+    canvas.height = parentDiv.clientHeight;
+    
+    // Append the canvas to the parent div
+    parentDiv.appendChild(canvas);
+
     canvas.style.width='100%';
     canvas.style.height='100%';
     canvas.width  = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;    
-    var canvasWidth = canvas.offsetWidth;
-    var canvasHeight = canvas.offsetHeight;
+    const canvasWidth = canvas.offsetWidth;
+    const canvasHeight = canvas.offsetHeight;
 
     const lineHeight = 20;
     let lines = [];
@@ -262,43 +285,21 @@ function loadData(canvasId, stackData){
         lineHeight
     )
 
-    canvas.addEventListener('resize', function(event) {
+    let previousCanvasWidth = canvasWidth;
+    window.addEventListener('resize', function() {
+        canvas.width = parentDiv.clientWidth;
+        canvas.height = parentDiv.clientHeight;
+        const newCtx = canvas.getContext("2d");
+        resizeLines(lines, previousCanvasWidth, canvas.width);
         renderLines(
-            ctx, 
-            canvasWidth, 
-            canvasHeight,
+            newCtx, 
+            canvas.offsetWidth, 
+            canvas.offsetHeight,
             lines,
             lineHeight
-        )
-    }, true);
+        );
+        previousCanvasWidth = canvas.width;
+    });
 }
 
-loadData("flamegraph", data);
-
-function resizeCanvas() {
-    // TODO: debouncer
-    const canvas = document.getElementById("flamegraph");
-    canvas.style.width='100%';
-    canvas.style.height='100%';
-    canvas.width  = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-
-    
-    var canvasWidth = canvas.offsetWidth;
-    var canvasHeight = canvas.offsetHeight;
-
-    const lineHeight = 20;
-    let lines = [];
-    
-    
-    const ctx = canvas.getContext("2d");
-    
-    renderByChildrenCount(canvas, data, lines);
-    renderLines(
-        ctx, 
-        canvasWidth, 
-        canvasHeight,
-        lines,
-        lineHeight
-    )
-}
+loadData("inPlaceQuickSort", data);
