@@ -4,13 +4,14 @@ function addEntry(
     x, 
     length, 
     name, 
-    node
+    node,
+    colorPalette
 ){
-    const colorPalette = ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"];
+    const colorPaletteToUse = colorPalette || ["#FF6F3C", "#FF9A3C", "#FFC93C"]
     const line = lines[lineNumber] || [];
     const children = [];
     
-    const color = colorPalette[name.charCodeAt(0) % colorPalette.length];
+    const color = colorPaletteToUse[name.charCodeAt(0) % colorPaletteToUse.length];
     const newEntry = {
         x, 
         length, 
@@ -90,7 +91,8 @@ function renderChildrenByChildrenCount(
     spanWidth,
     children, 
     currentLine,
-    lines
+    lines,
+    colorPalette
 ){
     if(!children || children.length === 0) return;
 
@@ -116,7 +118,8 @@ function renderChildrenByChildrenCount(
             x, 
             length, 
             child.name, 
-            child
+            child,
+            colorPalette
         );
 
         renderChildrenByChildrenCount(
@@ -124,7 +127,8 @@ function renderChildrenByChildrenCount(
             length,
             child.children, 
             currentLine + 1,
-            lines
+            lines,
+            colorPalette
         );
     }
 }
@@ -147,7 +151,8 @@ function addChildCount(root) {
 function renderByChildrenCount(
     canvas, 
     data, 
-    lines
+    lines,
+    colorPalette
 ) {
     addChildCount(data);
     renderChildrenByChildrenCount(
@@ -155,7 +160,8 @@ function renderByChildrenCount(
         canvas.offsetWidth,
         [data], 
         0, 
-        lines
+        lines,
+        colorPalette
     );
 }
 
@@ -166,7 +172,8 @@ function renderChildrenByTimestamp(
     spanWidth,
     children, 
     currentLine,
-    lines
+    lines,
+    colorPalette
 ){
     if(!children || children.length === 0) return;
 
@@ -184,7 +191,8 @@ function renderChildrenByTimestamp(
             x, 
             length, 
             child.name, 
-            child
+            child,
+            colorPalette
         );
 
         renderChildrenByTimestamp(
@@ -194,7 +202,8 @@ function renderChildrenByTimestamp(
             length,
             child.children, 
             currentLine + 1,
-            lines
+            lines,
+            colorPalette
         );
     }
 }
@@ -202,7 +211,8 @@ function renderChildrenByTimestamp(
 function renderByTimestamp(
     canvas, 
     data,
-    lines
+    lines,
+    colorPalette
 ) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
@@ -218,7 +228,8 @@ function renderByTimestamp(
         canvasWidth, 
         [data], 
         0,
-        lines
+        lines,
+        colorPalette
     );
 }
 
@@ -248,14 +259,16 @@ function bisectSpan(line, posX){
     }
 
     const candidate = line[start];
-    if (posX >= candidate.x && posX <= candidate.x + candidate.length) {
+    if (candidate && posX >= candidate.x && posX <= candidate.x + candidate.length) {
         return candidate;
     }
     
     return null;
 }
 
-function loadData(canvasHolderId, stackData, renderLogic){
+function loadData(config){
+    const canvasHolderId = config.elementId;
+    const stackData = config.data;
     const parentDiv = document.getElementById(canvasHolderId);
 
     // Create a canvas element
@@ -281,11 +294,21 @@ function loadData(canvasHolderId, stackData, renderLogic){
     
     const ctx = canvas.getContext("2d");
 
-    if(!renderLogic || renderLogic === "renderByChildrenCount"){
-        renderByChildrenCount(canvas, stackData, lines);
+    if(!config.graphType || config.graphType === "ChildrenCallCount"){
+        renderByChildrenCount(
+            canvas, 
+            stackData, 
+            lines,
+            config.colorPalette
+        );
     }
-    if (renderLogic === "renderByTimestamp") {
-        renderByTimestamp(canvas, stackData, lines);
+    if (config.graphType === "Timestamp") {
+        renderByTimestamp(
+            canvas, 
+            stackData, 
+            lines,
+            config.colorPalette
+        );
     }
     renderLines(
         ctx, 
@@ -312,25 +335,17 @@ function loadData(canvasHolderId, stackData, renderLogic){
         previousCanvasWidth = canvas.width;
     });
 
-    window.addEventListener('mousedown', function printCoords(e) {
-        const pos = getMousePos(canvas, e);
-        var canvasHeight = canvas.offsetHeight;
-        const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
-        if(line >= 0 && line < lines.length){
-            console.log(bisectSpan(lines[line], pos.x));
-        }
-    }, false);
+    if (config.onClick) {
+        window.addEventListener('mousedown', function printCoords(e) {
+            const pos = getMousePos(canvas, e);
+            var canvasHeight = canvas.offsetHeight;
+            const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
+            if(line >= 0 && line < lines.length){
+                const clickedOn = bisectSpan(lines[line], pos.x);
+                if (clickedOn) {
+                    config.onClick(clickedOn);
+                }
+            }
+        }, false);    
+    }
 }
-
-/*
-const config = {
-    elementId: elementId,
-    data: data,
-    graphType: "ChildrenCallCount",
-    colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
-    onClick: listener
-};
-*/
-
-loadData("inPlaceQuickSortByChildrenCount", data, "renderByChildrenCount");
-loadData("inPlaceQuickSortByTimestamp", data, "renderByTimestamp");

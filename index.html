@@ -14,7 +14,7 @@
         }
         body {
             margin: 0;
-            padding: 0;
+            padding: 5rem;
             min-height: 100%;
         }
         #inPlaceQuickSortByChildrenCount {
@@ -36,11 +36,37 @@
 <h2>ByTimestamp</h2>
 <div id="inPlaceQuickSortByTimestamp"></div>
 
-
+<p id="clickedNode"></p>
 
 <script type="text/javascript" src="filteredData.js"></script>
 <script type="text/javascript" src="stackignite.js"></script>
+<script>
 
+function showNode(n) {
+    document.getElementById("clickedNode").innerHTML = `<pre>{
+    name: ${n.node.name},
+    entryTime: ${n.node.entryTime},
+    exitTime: ${n.node.exitTime},
+    value": ${n.node.value},
+    arguments: ${JSON.stringify(n.node.arguments)},
+}</pre>`;
+}
+    
+loadData({
+    elementId: "inPlaceQuickSortByChildrenCount",
+    data: data,
+    graphType: "ChildrenCallCount",
+    colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
+    onClick: showNode
+});
+
+loadData({
+    elementId: "inPlaceQuickSortByTimestamp",
+    data: data,
+    graphType: "Timestamp",
+    onClick: showNode
+});
+</script>
 
 </body>
 </html>
