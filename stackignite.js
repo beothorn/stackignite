@@ -1,4 +1,5 @@
 function addEntry(
+    parent,
     lines, 
     lineNumber, 
     x, 
@@ -13,6 +14,7 @@ function addEntry(
     
     const color = colorPaletteToUse[name.charCodeAt(0) % colorPaletteToUse.length];
     const newEntry = {
+        parent,
         x, 
         length, 
         name,
@@ -89,6 +91,7 @@ function renderLines(
 function renderChildrenByChildrenCount(
     startX,
     spanWidth,
+    parent,
     children, 
     currentLine,
     lines,
@@ -112,7 +115,8 @@ function renderChildrenByChildrenCount(
         const x = xOffset;
         xOffset = xOffset + length;
 
-        addEntry(
+        const newEntry = addEntry(
+            parent,
             lines,
             currentLine,
             x, 
@@ -125,6 +129,7 @@ function renderChildrenByChildrenCount(
         renderChildrenByChildrenCount(
             x, 
             length,
+            newEntry,
             child.children, 
             currentLine + 1,
             lines,
@@ -158,6 +163,7 @@ function renderByChildrenCount(
     renderChildrenByChildrenCount(
         0,
         canvas.offsetWidth,
+        null,
         [data], 
         0, 
         lines,
@@ -170,6 +176,7 @@ function renderChildrenByTimestamp(
     executionTime,
     startX,
     spanWidth,
+    parent,
     children, 
     currentLine,
     lines,
@@ -185,7 +192,8 @@ function renderChildrenByTimestamp(
 
         const x = startX + (((childEntryTime - startTimestamp) / executionTime) * spanWidth);
         let length = (childExecutionTime / executionTime) * spanWidth;
-        addEntry(
+        const newEntry = addEntry(
+            parent,
             lines,
             currentLine,
             x, 
@@ -200,6 +208,7 @@ function renderChildrenByTimestamp(
             childExecutionTime,
             x, 
             length,
+            newEntry,
             child.children, 
             currentLine + 1,
             lines,
@@ -226,6 +235,7 @@ function renderByTimestamp(
         executionTime, 
         0,
         canvasWidth, 
+        null,
         [data], 
         0,
         lines,
@@ -294,22 +304,23 @@ function loadData(config){
     
     const ctx = canvas.getContext("2d");
 
+    let graphFunction;
+    
+    
     if(!config.graphType || config.graphType === "ChildrenCallCount"){
-        renderByChildrenCount(
-            canvas, 
-            stackData, 
-            lines,
-            config.colorPalette
-        );
+        graphFunction = renderByChildrenCount;
     }
     if (config.graphType === "Timestamp") {
-        renderByTimestamp(
-            canvas, 
-            stackData, 
-            lines,
-            config.colorPalette
-        );
+        graphFunction = renderByTimestamp;
     }
+
+    graphFunction(
+        canvas, 
+        stackData, 
+        lines,
+        config.colorPalette
+    )
+    
     renderLines(
         ctx, 
         canvasWidth, 
@@ -342,8 +353,48 @@ function loadData(config){
             const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
             if(line >= 0 && line < lines.length){
                 const clickedOn = bisectSpan(lines[line], pos.x);
-                if (clickedOn) {
+                if (!clickedOn) return;
+                if (config.onClick) {
                     config.onClick(clickedOn);
+                }
+
+                if (config.zoomOnClick) {
+                    let parentLines = [];
+                    let parent = clickedOn.parent;
+                    while (parent) {
+                        parentLines = [[parent]].concat(parentLines);
+                        parent = parent.parent;
+                    }
+                    
+                    let tempLines = [];
+                    graphFunction(
+                        canvas, 
+                        clickedOn.node, 
+                        tempLines,
+                        config.colorPalette
+                    )
+
+                    for (let parentLine of parentLines) {
+                        for (let p of parentLine) {
+                            p.x = 0;
+                            p.length = canvasWidth;
+                            p.color = "gray";
+                        }
+                    }
+                    
+                    if (parentLines[parentLines.length - 1]) {
+                        tempLines[0][0].parent = parentLines[parentLines.length - 1][0];
+                    }
+                    
+                    lines = parentLines.concat(tempLines);
+                    renderLines(
+                        ctx, 
+                        canvasWidth, 
+                        canvasHeight,
+                        lines,
+                        lineHeight
+                    )
+                    
                 }
             }
         }, false);    

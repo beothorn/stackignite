@@ -14,6 +14,7 @@ Maybe I will clean this up, but it is usable, just copy stackignite.js to your p
 - Bar size by timestamp or children count.
 - Resizable, responsive
 - Customizable color palette
+- Instant zoom span on click  
 
 
 # Graph Types
@@ -49,7 +50,8 @@ loadData({
     elementId: "inPlaceQuickSortByChildrenCount",
     data: data,
     graphType: "ChildrenCallCount",
-    colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
-    onClick: (n) => console.log(n)
+    colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"], // optional
+    onClick: (n) => console.log(n), // optional
+    zoomOnClick: true // optional
 });
 ```

@@ -51,19 +51,21 @@ function showNode(n) {
     arguments: ${JSON.stringify(n.node.arguments)},
 }</pre>`;
 }
-    
+
 loadData({
     elementId: "inPlaceQuickSortByChildrenCount",
     data: data,
     graphType: "ChildrenCallCount",
     colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
-    onClick: showNode
+    onClick: showNode,
+    zoomOnClick: true
 });
 
 loadData({
     elementId: "inPlaceQuickSortByTimestamp",
     data: data,
     graphType: "Timestamp",
+    colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
     onClick: showNode
 });
 </script>
