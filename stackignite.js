@@ -203,7 +203,10 @@ function renderChildrenByTimestamp(
     }
 }
 
-function renderByTimestamp(canvas, data) {
+function renderByTimestamp(
+    canvas, 
+    data
+) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
 
@@ -237,7 +240,7 @@ function getMousePos(canvas, evt) {
     };
 }
 
-function loadData(canvasHolderId, stackData){
+function loadData(canvasHolderId, stackData, renderLogic){
     const parentDiv = document.getElementById(canvasHolderId);
 
     // Create a canvas element
@@ -262,8 +265,13 @@ function loadData(canvasHolderId, stackData){
     let lines = [];
     
     const ctx = canvas.getContext("2d");
-    
-    renderByChildrenCount(canvas, stackData, lines);
+
+    if(!renderLogic || renderLogic === "renderByChildrenCount"){
+        renderByChildrenCount(canvas, stackData, lines);
+    }
+    if (renderLogic === "renderByTimestamp") {
+        renderByTimestamp(canvas, stackData, lines);
+    }
     renderLines(
         ctx, 
         canvasWidth, 
@@ -298,4 +306,5 @@ function loadData(canvasHolderId, stackData){
     }, false);
 }
 
-loadData("inPlaceQuickSort", data);
+loadData("inPlaceQuickSortByChildrenCount", data, "renderByChildrenCount");
+loadData("inPlaceQuickSortByTimestamp", data, "renderByTimestamp");
