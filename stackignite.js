@@ -1,11 +1,42 @@
-const lineHeight = 20;
+function addEntry(
+    lines, 
+    lineNumber, 
+    x, 
+    length, 
+    name, 
+    node
+){
+    const line = lines[lineNumber] || [];
+    const children = [];
+    const color = "green";
+    const newEntry = {
+        x, 
+        length, 
+        name,
+        node,
+        color,
+        children
+    };
+    line.push(newEntry);
+    lines[lineNumber] = line;
+    return newEntry;
+}
 
-function drawBar(ctx, x, y, width, height, clearWidth, color, text) {
+function drawBar(
+    ctx, 
+    x, 
+    y, 
+    width, 
+    height, 
+    clearWidth, 
+    color, 
+    text
+) {
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.strokeStyle = "gray";
+    ctx.strokeStyle = "white";
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = "black";
@@ -14,18 +45,41 @@ function drawBar(ctx, x, y, width, height, clearWidth, color, text) {
     ctx.clearRect(x + width, y, clearWidth - x, height);
 }
 
-function renderChildrenByChildrenCount(
+function renderLines(
     ctx, 
     canvasWidth, 
-    canvasHeight, 
+    canvasHeight,
+    linesToDraw,
+    lineDrawHeight
+){
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    for (let currentLine = 0; currentLine < linesToDraw.length; currentLine++) {
+        const line = linesToDraw[currentLine];
+        const lineY = canvasHeight - (lineDrawHeight * currentLine);
+        for (let i = 0; i < line.length; i++) {
+            const entry = line[i];
+            drawBar(
+                ctx, 
+                entry.x, 
+                lineY, 
+                entry.length, 
+                lineDrawHeight, 
+                canvasWidth,
+                entry.color, 
+                entry.name
+            );
+        }
+    }
+}
+
+function renderChildrenByChildrenCount(
     startX,
     spanWidth,
     children, 
-    currentLine
+    currentLine,
+    lines
 ){
     if(!children || children.length === 0) return;
-
-    let currentY = canvasHeight - (lineHeight * currentLine);
 
     let totalChildrenCount = 0;
     for (let i = 0; i < children.length; i++) {
@@ -43,32 +97,28 @@ function renderChildrenByChildrenCount(
         const x = xOffset;
         xOffset = xOffset + length;
 
-        drawBar(
-            ctx, 
+        addEntry(
+            lines,
+            currentLine,
             x, 
-            currentY, 
             length, 
-            lineHeight, 
-            canvasWidth, 
-            "green", 
-            child.name
+            child.name, 
+            child
         );
 
         renderChildrenByChildrenCount(
-            ctx,  
-            canvasWidth, 
-            canvasHeight,
             x, 
             length,
             child.children, 
-            currentLine + 1
+            currentLine + 1,
+            lines
         );
     }
 }
 
 function addChildCount(root) {
     if (!root.children) {
-        root.deepChildrenCount = 1;
+        root.deepChildrenCount = 1; // Needs to be at least 1 to render
         return;
     }
 
@@ -81,25 +131,14 @@ function addChildCount(root) {
     root.deepChildrenCount = sum;
 }
 
-function renderByChildrenCount(canvas, data) {
-    var canvasWidth = canvas.offsetWidth;
-    var canvasHeight = canvas.offsetHeight;
-
-    const ctx = canvas.getContext("2d");
-    console.log({
-        canvasWidth,
-        canvasHeight,
-        h: ctx.height
-    });
+function renderByChildrenCount(canvas, data, lines) {
     addChildCount(data);
     renderChildrenByChildrenCount(
-        ctx, 
-        canvasWidth, 
-        canvasHeight,
         0,
-        canvasWidth,
+        canvas.offsetWidth,
         [data], 
-        0
+        0, 
+        lines
     );
 }
 
@@ -179,13 +218,87 @@ function renderByTimestamp(canvas, data) {
     );
 }
 
-(() => {
+
+function printCoords(e) {
     const canvas = document.getElementById("flamegraph");
-    renderByChildrenCount(canvas, data);
-})();
+    const pos = getMousePos(canvas, e);
+    var canvasHeight = canvas.offsetHeight;
+    console.log(pos);
+    const lineHeight = 20;
+    const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
+    console.log("Line "+line);
+    
+}
+window.addEventListener('mousedown', printCoords, false);
+
+function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+    };
+}
+
+function loadData(canvasId, stackData){
+    const canvas = document.getElementById(canvasId);
+    canvas.style.width='100%';
+    canvas.style.height='100%';
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;    
+    var canvasWidth = canvas.offsetWidth;
+    var canvasHeight = canvas.offsetHeight;
+
+    const lineHeight = 20;
+    let lines = [];
+    
+    const ctx = canvas.getContext("2d");
+    
+    renderByChildrenCount(canvas, stackData, lines);
+    renderLines(
+        ctx, 
+        canvasWidth, 
+        canvasHeight,
+        lines,
+        lineHeight
+    )
+
+    canvas.addEventListener('resize', function(event) {
+        renderLines(
+            ctx, 
+            canvasWidth, 
+            canvasHeight,
+            lines,
+            lineHeight
+        )
+    }, true);
+}
+
+loadData("flamegraph", data);
 
 function resizeCanvas() {
+    // TODO: debouncer
     const canvas = document.getElementById("flamegraph");
-    canvas.width = window.innerWidth;
-    renderByChildrenCount(canvas, data);
+    canvas.style.width='100%';
+    canvas.style.height='100%';
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    
+    var canvasWidth = canvas.offsetWidth;
+    var canvasHeight = canvas.offsetHeight;
+
+    const lineHeight = 20;
+    let lines = [];
+    
+    
+    const ctx = canvas.getContext("2d");
+    
+    renderByChildrenCount(canvas, data, lines);
+    renderLines(
+        ctx, 
+        canvasWidth, 
+        canvasHeight,
+        lines,
+        lineHeight
+    )
 }
