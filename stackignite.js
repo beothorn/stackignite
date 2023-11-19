@@ -6,9 +6,11 @@ function addEntry(
     name, 
     node
 ){
+    const colorPalette = ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"];
     const line = lines[lineNumber] || [];
     const children = [];
-    const color = "green";
+    
+    const color = colorPalette[name.charCodeAt(0) % colorPalette.length];
     const newEntry = {
         x, 
         length, 
@@ -228,6 +230,31 @@ function getMousePos(canvas, evt) {
     };
 }
 
+function bisectSpan(line, posX){
+    let start = 0;
+    let end = line.length;
+
+    while(start != end) {
+        let middle = start + Math.floor((end - start) / 2);
+        const candidate = line[middle];
+        if (posX >= candidate.x && posX <= candidate.x + candidate.length) {
+            return candidate;
+        }
+        if (posX < candidate.x) {
+            end = middle - 1;
+        } else {
+            start = middle + 1;
+        }
+    }
+
+    const candidate = line[start];
+    if (posX >= candidate.x && posX <= candidate.x + candidate.length) {
+        return candidate;
+    }
+    
+    return null;
+}
+
 function loadData(canvasHolderId, stackData, renderLogic){
     const parentDiv = document.getElementById(canvasHolderId);
 
@@ -270,6 +297,7 @@ function loadData(canvasHolderId, stackData, renderLogic){
 
     let previousCanvasWidth = canvasWidth;
     window.addEventListener('resize', function() {
+        // TODO: debouncer
         canvas.width = parentDiv.clientWidth;
         canvas.height = parentDiv.clientHeight;
         const newCtx = canvas.getContext("2d");
@@ -289,11 +317,20 @@ function loadData(canvasHolderId, stackData, renderLogic){
         var canvasHeight = canvas.offsetHeight;
         const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
         if(line >= 0 && line < lines.length){
-            console.log(lines);
-            console.log(lines[line]);
+            console.log(bisectSpan(lines[line], pos.x));
         }
     }, false);
 }
+
+/*
+const config = {
+    elementId: elementId,
+    data: data,
+    graphType: "ChildrenCallCount",
+    colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
+    onClick: listener
+};
+*/
 
 loadData("inPlaceQuickSortByChildrenCount", data, "renderByChildrenCount");
 loadData("inPlaceQuickSortByTimestamp", data, "renderByTimestamp");
