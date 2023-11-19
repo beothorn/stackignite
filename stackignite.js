@@ -66,7 +66,7 @@ function renderLines(
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     for (let currentLine = 0; currentLine < linesToDraw.length; currentLine++) {
         const line = linesToDraw[currentLine];
-        const lineY = canvasHeight - (lineDrawHeight * currentLine);
+        const lineY = canvasHeight - (lineDrawHeight * (currentLine + 1));
         for (let i = 0; i < line.length; i++) {
             const entry = line[i];
             drawBar(
@@ -142,7 +142,11 @@ function addChildCount(root) {
     root.deepChildrenCount = sum;
 }
 
-function renderByChildrenCount(canvas, data, lines) {
+function renderByChildrenCount(
+    canvas, 
+    data, 
+    lines
+) {
     addChildCount(data);
     renderChildrenByChildrenCount(
         0,
@@ -154,81 +158,65 @@ function renderByChildrenCount(canvas, data, lines) {
 }
 
 function renderChildrenByTimestamp(
-    ctx, 
-    canvasWidth, 
-    canvasHeight, 
+    startTimestamp,
+    executionTime,
     startX,
     spanWidth,
-    startTimestamp, 
-    executionTime,  
     children, 
-    currentLine
+    currentLine,
+    lines
 ){
     if(!children || children.length === 0) return;
 
-    let currentY = canvasHeight - (lineHeight * currentLine);
     for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const childEntryTime = child.entryTime;
         const childExitTime = child.exitTime;
         const childExecutionTime = childExitTime - childEntryTime;
 
-        const x = startX +  (((childEntryTime - startTimestamp) / executionTime) * spanWidth);
-        let childWidth = (childExecutionTime / executionTime) * spanWidth;
-        if (childWidth === 0){ // Less then 1 pixel, skip
-            continue;
-        }
-        drawBar(
-            ctx, 
+        const x = startX + (((childEntryTime - startTimestamp) / executionTime) * spanWidth);
+        let length = (childExecutionTime / executionTime) * spanWidth;
+        addEntry(
+            lines,
+            currentLine,
             x, 
-            currentY, 
-            childWidth, 
-            lineHeight, 
-            canvasWidth, 
-            "green", 
-            child.name
+            length, 
+            child.name, 
+            child
         );
 
         renderChildrenByTimestamp(
-            ctx,  
-            canvasWidth, 
-            canvasHeight,
+            childEntryTime,
+            childExecutionTime,
             x, 
-            childWidth,
-            childEntryTime, 
-            childExecutionTime, 
+            length,
             child.children, 
-            currentLine + 1
+            currentLine + 1,
+            lines
         );
     }
 }
 
 function renderByTimestamp(
     canvas, 
-    data
+    data,
+    lines
 ) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
 
     const ctx = canvas.getContext("2d");
-    console.log({
-        canvasWidth,
-        canvasHeight,
-        h: ctx.height
-    });
     const startTimestamp = data.entryTime;
     const endTimestamp = data.exitTime;
     const executionTime = endTimestamp - startTimestamp;
     renderChildrenByTimestamp(
-        ctx, 
-        canvasWidth, 
-        canvasHeight,
-        0,
-        canvasWidth,
         startTimestamp, 
         executionTime, 
+        0,
+        canvasWidth, 
         [data], 
-        0
+        0,
+        lines
     );
 }
 
@@ -299,10 +287,11 @@ function loadData(canvasHolderId, stackData, renderLogic){
     window.addEventListener('mousedown', function printCoords(e) {
         const pos = getMousePos(canvas, e);
         var canvasHeight = canvas.offsetHeight;
-        console.log(pos);
         const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
-        console.log("Line "+line);
-        
+        if(line >= 0 && line < lines.length){
+            console.log(lines);
+            console.log(lines[line]);
+        }
     }, false);
 }
 
