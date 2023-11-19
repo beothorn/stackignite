@@ -229,19 +229,6 @@ function renderByTimestamp(canvas, data) {
     );
 }
 
-
-function printCoords(e) {
-    const canvas = document.getElementById("flamegraph");
-    const pos = getMousePos(canvas, e);
-    var canvasHeight = canvas.offsetHeight;
-    console.log(pos);
-    const lineHeight = 20;
-    const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
-    console.log("Line "+line);
-    
-}
-window.addEventListener('mousedown', printCoords, false);
-
 function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect();
     return {
@@ -300,6 +287,15 @@ function loadData(canvasHolderId, stackData){
         );
         previousCanvasWidth = canvas.width;
     });
+
+    window.addEventListener('mousedown', function printCoords(e) {
+        const pos = getMousePos(canvas, e);
+        var canvasHeight = canvas.offsetHeight;
+        console.log(pos);
+        const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
+        console.log("Line "+line);
+        
+    }, false);
 }
 
 loadData("inPlaceQuickSort", data);
