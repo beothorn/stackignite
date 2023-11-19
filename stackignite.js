@@ -14,7 +14,7 @@ function drawBar(ctx, x, y, width, height, clearWidth, color, text) {
     ctx.clearRect(x + width, y, clearWidth - x, height);
 }
 
-function renderChildrenByCall(
+function renderChildrenByChildrenCount(
     ctx, 
     canvasWidth, 
     canvasHeight, 
@@ -26,24 +26,20 @@ function renderChildrenByCall(
     if(!children || children.length === 0) return;
 
     let currentY = canvasHeight - (lineHeight * currentLine);
-    const length = spanWidth / children.length;
-    if (length < 1){
-        drawBar(
-            ctx, 
-            startX, 
-            currentY, 
-            spanWidth, 
-            lineHeight, 
-            canvasWidth, 
-            "green", 
-            "..."
-        );
+
+    let totalChildrenCount = 0;
+    for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        totalChildrenCount += child.deepChildrenCount;
     }
+
+    const unitLength = spanWidth / totalChildrenCount;
 
     let xOffset = startX;
     for (let i = 0; i < children.length; i++) {
         const child = children[i];
 
+        const length = unitLength * child.deepChildrenCount;
         const x = xOffset;
         xOffset = xOffset + length;
 
@@ -58,7 +54,7 @@ function renderChildrenByCall(
             child.name
         );
 
-        renderChildrenByCall(
+        renderChildrenByChildrenCount(
             ctx,  
             canvasWidth, 
             canvasHeight,
@@ -70,7 +66,22 @@ function renderChildrenByCall(
     }
 }
 
-function renderByCall(canvas, data) {
+function addChildCount(root) {
+    if (!root.children) {
+        root.deepChildrenCount = 1;
+        return;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < root.children.length; i++) {
+        const child = root.children[i];
+        addChildCount(child);
+        sum += child.deepChildrenCount;
+    }
+    root.deepChildrenCount = sum;
+}
+
+function renderByChildrenCount(canvas, data) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
 
@@ -80,7 +91,8 @@ function renderByCall(canvas, data) {
         canvasHeight,
         h: ctx.height
     });
-    renderChildrenByCall(
+    addChildCount(data);
+    renderChildrenByChildrenCount(
         ctx, 
         canvasWidth, 
         canvasHeight,
@@ -169,10 +181,11 @@ function renderByTimestamp(canvas, data) {
 
 (() => {
     const canvas = document.getElementById("flamegraph");
-    renderByCall(canvas, data);
+    renderByChildrenCount(canvas, data);
 })();
 
 function resizeCanvas() {
     const canvas = document.getElementById("flamegraph");
-    renderByCall(canvas, data);
+    canvas.width = window.innerWidth;
+    renderByChildrenCount(canvas, data);
 }
