@@ -255,17 +255,19 @@ function bisectSpan(line, posX){
     let start = 0;
     let end = line.length;
 
-    while(start != end) {
-        let middle = start + Math.floor((end - start) / 2);
+    let middle = start + Math.floor((end - start) / 2);
+    
+    while(start != middle) {
         const candidate = line[middle];
         if (posX >= candidate.x && posX <= candidate.x + candidate.length) {
             return candidate;
         }
         if (posX < candidate.x) {
-            end = middle - 1;
+            end = middle;
         } else {
-            start = middle + 1;
+            start = middle;
         }
+        middle = start + Math.floor((end - start) / 2);
     }
 
     const candidate = line[start];
@@ -345,6 +347,58 @@ function loadData(config){
         );
         previousCanvasWidth = canvas.width;
     });
+    
+    if (config.tooltip) {
+        const tooltip = document.createElement('div');
+        tooltip.id = canvasHolderId+"Tooltip"; 
+        tooltip.style.position = 'absolute';
+        tooltip.style.padding = '0';
+        tooltip.style.margin = '0';
+        tooltip.style.display = 'none';
+
+        document.body.appendChild(tooltip);
+        let currentLine = -1;
+        let currentX = -1;
+        let currentX2 = -1;
+        let currentNode = null;
+        canvas.addEventListener('mousemove', function(e) {
+            var pos = getMousePos(canvas, e);
+            var canvasHeight = canvas.offsetHeight;
+            const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
+            if(line >= 0 && line < lines.length){
+                let hoverOver = currentNode;
+                const isSameNode = pos.x >= currentX && pos.x <= currentX2 && line === currentLine; 
+                if( !isSameNode ) {
+                    hoverOver = bisectSpan(lines[line], pos.x);
+                    if(hoverOver){
+                        currentX = hoverOver.x;
+                        currentX2 = hoverOver.x + hoverOver.length;
+                        currentLine = line;
+                        currentNode = hoverOver;
+                    }
+                }
+                if (hoverOver) {
+                    if (tooltip.style.display !== 'block') {
+                        tooltip.style.display = 'block';
+                    }
+                    tooltip.style.left = (e.pageX + 5) + 'px'; // 5 to avoid mouse over on tooltip
+                    tooltip.style.top = (e.pageY + 5) + 'px';
+                    const content = config.tooltip(hoverOver);
+                    if (tooltip.innerHTML !== content) {
+                        tooltip.innerHTML = content;
+                    }
+                } else {
+                    if (tooltip.style.display !== 'none') {
+                        tooltip.style.display = 'none';
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseout', function(e) {
+            tooltip.style.display = 'none';
+        });
+    }
 
     if (config.onClick) {
         window.addEventListener('mousedown', function printCoords(e) {

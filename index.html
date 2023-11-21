@@ -17,11 +17,27 @@
             padding: 5rem;
             min-height: 100%;
         }
-        #inPlaceQuickSortByChildrenCount {
+        #inPlaceQuickSortByChildrenCountTooltip{
+            background: #596eff;
+            padding: 10px;
             border: 1px solid black;
             height: 250px;
         }
+        .tooltip{
+            background: #edff59;
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid black;
+            box-shadow: 7px 4px 1px rgba(0, 0, 0, 0.3);
+            border: 1px solid black;
+            font-size: x-small;
+            font-family: monospace;
+        }
         #inPlaceQuickSortByTimestamp {
+            border: 1px solid black;
+            height: 250px;
+        }
+        #inPlaceQuickSortByChildrenCount {
             border: 1px solid black;
             height: 250px;
         }
@@ -58,7 +74,8 @@ loadData({
     graphType: "ChildrenCallCount",
     colorPalette: ["rgb(249, 237, 105)", "rgb(240, 138, 93)", "rgb(184, 59, 94)", "rgb(106, 44, 112)"],
     onClick: showNode,
-    zoomOnClick: true
+    zoomOnClick: true,
+    tooltip: (n) => `${n.name}`
 });
 
 loadData({
@@ -66,8 +83,10 @@ loadData({
     data: data,
     graphType: "Timestamp",
     colorPalette: ["#FFBB5C", "#FF9B50", "#E25E3E", "#C63D2F"],
-    onClick: showNode
+    onClick: showNode,
+    tooltip: (n) => `<div class="tooltip">${n.name}</div>`
 });
+
 </script>
 
 </body>
