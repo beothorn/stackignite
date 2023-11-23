@@ -37,6 +37,7 @@ function drawBar(
     color, 
     text
 ) {
+    if (width === 0) return;
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.fillStyle = color;
@@ -189,9 +190,12 @@ function renderChildrenByTimestamp(
         const childEntryTime = child.entryTime;
         const childExitTime = child.exitTime;
         const childExecutionTime = childExitTime - childEntryTime;
-
-        const x = startX + (((childEntryTime - startTimestamp) / executionTime) * spanWidth);
-        let length = (childExecutionTime / executionTime) * spanWidth;
+        let x = startX;
+        let length = 0;
+        if ( executionTime > 0 ){
+            x = startX + (((childEntryTime - startTimestamp) / executionTime) * spanWidth);
+            length = (childExecutionTime / executionTime) * spanWidth;
+        }
         const newEntry = addEntry(
             parent,
             lines,
