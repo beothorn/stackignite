@@ -46,8 +46,9 @@ function drawBar(
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = "black";
-    ctx.font = "12px serif";
-    ctx.fillText(text, x + 5, y + 14);
+    const size = Math.floor( height / 2 ); // All values are experimental and will break on extreme values
+    ctx.font = size+"px serif";
+    ctx.fillText(text, x + 5, y + size + 5);
     ctx.clearRect(x + width, y, clearWidth - x, height);
 }
 
@@ -286,7 +287,7 @@ function loadData(config){
     const canvasHolderId = config.elementId;
     const stackData = config.data;
     const parentDiv = document.getElementById(canvasHolderId);
-
+    
     // Create a canvas element
     const canvas = document.createElement('canvas');
     canvas.id = canvasHolderId+"Canvas";
@@ -295,9 +296,10 @@ function loadData(config){
     canvas.width = parentDiv.clientWidth;
     canvas.height = parentDiv.clientHeight;
     
+    
+
     // Append the canvas to the parent div
     parentDiv.appendChild(canvas);
-
     canvas.style.width='100%';
     canvas.style.height='100%';
     canvas.width  = canvas.offsetWidth;
@@ -305,7 +307,8 @@ function loadData(config){
     const canvasWidth = canvas.offsetWidth;
     const canvasHeight = canvas.offsetHeight;
 
-    const lineHeight = 20;
+
+    const lineHeight = config.lineHeight || 20;
     let lines = [];
     
     const ctx = canvas.getContext("2d");
@@ -326,22 +329,38 @@ function loadData(config){
         lines,
         config.colorPalette
     )
-    
-    renderLines(
-        ctx, 
-        canvasWidth, 
-        canvasHeight,
-        lines,
-        lineHeight
-    )
+
+    const totalHeight = lines.length * lineHeight;
+    parentDiv.style.height = totalHeight + "px";
 
     let previousCanvasWidth = canvasWidth;
+    
+    canvas.width = parentDiv.clientWidth;
+    canvas.height = parentDiv.clientHeight;
+    resizeLines(
+        lines, 
+        previousCanvasWidth, 
+        canvas.width
+    );
+    renderLines(
+        ctx, 
+        canvas.offsetWidth, 
+        canvas.offsetHeight,
+        lines,
+        lineHeight
+    );
+    previousCanvasWidth = canvas.width;
+    
     window.addEventListener('resize', function() {
         // TODO: debouncer
         canvas.width = parentDiv.clientWidth;
         canvas.height = parentDiv.clientHeight;
         const newCtx = canvas.getContext("2d");
-        resizeLines(lines, previousCanvasWidth, canvas.width);
+        resizeLines(
+            lines, 
+            previousCanvasWidth, 
+            canvas.width
+        );
         renderLines(
             newCtx, 
             canvas.offsetWidth, 
