@@ -404,7 +404,7 @@ function loadData(config){
         });
     }
 
-    if (config.onClick) {
+    if (config.onClick || config.zoomOnClick) {
         window.addEventListener('mousedown', function printCoords(e) {
             const pos = getMousePos(canvas, e);
             var canvasHeight = canvas.offsetHeight;
