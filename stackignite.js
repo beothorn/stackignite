@@ -443,7 +443,8 @@ function loadData(config){
                     if (parentLines[parentLines.length - 1]) {
                         tempLines[0][0].parent = parentLines[parentLines.length - 1][0];
                     }
-                    
+
+                    tempLines[0][0].color = "#ccc";
                     lines = parentLines.concat(tempLines);
                     renderLines(
                         ctx, 
