@@ -308,7 +308,7 @@ function loadData(config){
     const canvasHeight = canvas.offsetHeight;
 
 
-    const lineHeight = config.lineHeight || 20;
+    const lineHeight = config.lineHeight || 24;
     let lines = [];
     
     const ctx = canvas.getContext("2d");
