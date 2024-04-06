@@ -76,13 +76,15 @@ function renderLines(
         const lineY = canvasHeight - (lineDrawHeight * (currentLine + 1));
         for (let i = 0; i < line.length; i++) {
             const entry = line[i];
-            let color = colorPaletteToUse[entry.name.charCodeAt(0) % colorPaletteToUse.length];
+            let color;
             if (entry.highlighted) {
-                color= "gray";
+                color = "gray";
+            } else if (entry.disabled) {
+                color = "#ccc";
+            } else {
+                color = colorPaletteToUse[entry.name.charCodeAt(0) % colorPaletteToUse.length];
             }
-            if (entry.disabled) {
-                color= "#ccc";
-            }
+
             drawBar(
                 ctx, 
                 entry.x, 
