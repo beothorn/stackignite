@@ -5,22 +5,20 @@ function addEntry(
     x, 
     length, 
     name, 
-    node,
-    colorPalette
+    node
 ){
-    const colorPaletteToUse = colorPalette || ["#FF6F3C", "#FF9A3C", "#FFC93C"]
     const line = lines[lineNumber] || [];
     const children = [];
     
-    const color = colorPaletteToUse[name.charCodeAt(0) % colorPaletteToUse.length];
     const newEntry = {
         parent,
         x, 
         length, 
         name,
         node,
-        color,
-        children
+        children,
+        highlighted: false,
+        disabled: false
     };
     line.push(newEntry);
     lines[lineNumber] = line;
@@ -68,14 +66,23 @@ function renderLines(
     canvasWidth, 
     canvasHeight,
     linesToDraw,
-    lineDrawHeight
+    lineDrawHeight,
+    colorPalette
 ){
+    const colorPaletteToUse = colorPalette || ["#FF6F3C", "#FF9A3C", "#FFC93C"];
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     for (let currentLine = 0; currentLine < linesToDraw.length; currentLine++) {
         const line = linesToDraw[currentLine];
         const lineY = canvasHeight - (lineDrawHeight * (currentLine + 1));
         for (let i = 0; i < line.length; i++) {
             const entry = line[i];
+            let color = colorPaletteToUse[entry.name.charCodeAt(0) % colorPaletteToUse.length];
+            if (entry.highlighted) {
+                color= "gray";
+            }
+            if (entry.disabled) {
+                color= "#ccc";
+            }
             drawBar(
                 ctx, 
                 entry.x, 
@@ -83,7 +90,7 @@ function renderLines(
                 entry.length, 
                 lineDrawHeight, 
                 canvasWidth,
-                entry.color, 
+                color, 
                 entry.name
             );
         }
@@ -96,8 +103,7 @@ function renderChildrenByChildrenCount(
     parent,
     children, 
     currentLine,
-    lines,
-    colorPalette
+    lines
 ){
     if(!children || children.length === 0) return;
 
@@ -124,8 +130,7 @@ function renderChildrenByChildrenCount(
             x, 
             length, 
             child.name, 
-            child,
-            colorPalette
+            child
         );
 
         renderChildrenByChildrenCount(
@@ -134,8 +139,7 @@ function renderChildrenByChildrenCount(
             newEntry,
             child.children, 
             currentLine + 1,
-            lines,
-            colorPalette
+            lines
         );
     }
 }
@@ -158,8 +162,7 @@ function addChildCount(root) {
 function renderByChildrenCount(
     canvas, 
     data, 
-    lines,
-    colorPalette
+    lines
 ) {
     addChildCount(data);
     renderChildrenByChildrenCount(
@@ -168,8 +171,7 @@ function renderByChildrenCount(
         null,
         [data], 
         0, 
-        lines,
-        colorPalette
+        lines
     );
 }
 
@@ -181,8 +183,7 @@ function renderChildrenByTimestamp(
     parent,
     children, 
     currentLine,
-    lines,
-    colorPalette
+    lines
 ){
     if(!children || children.length === 0) return;
 
@@ -204,8 +205,7 @@ function renderChildrenByTimestamp(
             x, 
             length, 
             child.name, 
-            child,
-            colorPalette
+            child
         );
 
         renderChildrenByTimestamp(
@@ -216,8 +216,7 @@ function renderChildrenByTimestamp(
             newEntry,
             child.children, 
             currentLine + 1,
-            lines,
-            colorPalette
+            lines
         );
     }
 }
@@ -225,8 +224,7 @@ function renderChildrenByTimestamp(
 function renderByTimestamp(
     canvas, 
     data,
-    lines,
-    colorPalette
+    lines
 ) {
     var canvasWidth = canvas.offsetWidth;
     var canvasHeight = canvas.offsetHeight;
@@ -243,8 +241,7 @@ function renderByTimestamp(
         null,
         [data], 
         0,
-        lines,
-        colorPalette
+        lines
     );
 }
 
@@ -314,6 +311,7 @@ function loadData(config){
     const ctx = canvas.getContext("2d");
 
     let graphFunction;
+    let palette = config.colorPalette;
     
     
     if(!config.graphType || config.graphType === "ChildrenCallCount"){
@@ -326,8 +324,7 @@ function loadData(config){
     graphFunction(
         canvas, 
         stackData, 
-        lines,
-        config.colorPalette
+        lines
     )
 
     const totalHeight = lines.length * lineHeight;
@@ -347,7 +344,8 @@ function loadData(config){
         canvas.offsetWidth, 
         canvas.offsetHeight,
         lines,
-        lineHeight
+        lineHeight,
+        palette
     );
     previousCanvasWidth = canvas.width;
     
@@ -366,7 +364,8 @@ function loadData(config){
             canvas.offsetWidth, 
             canvas.offsetHeight,
             lines,
-            lineHeight
+            lineHeight,
+            palette
         );
         previousCanvasWidth = canvas.width;
     });
@@ -448,15 +447,14 @@ function loadData(config){
                     graphFunction(
                         canvas, 
                         clickedOn.node, 
-                        tempLines,
-                        config.colorPalette
+                        tempLines
                     )
 
                     for (let parentLine of parentLines) {
                         for (let p of parentLine) {
                             p.x = 0;
                             p.length = canvasWidth;
-                            p.color = "gray";
+                            p.highlighted = true;
                         }
                     }
                     
@@ -464,18 +462,37 @@ function loadData(config){
                         tempLines[0][0].parent = parentLines[parentLines.length - 1][0];
                     }
 
-                    tempLines[0][0].color = "#ccc";
+                    tempLines[0][0].disabled = true;
                     lines = parentLines.concat(tempLines);
                     renderLines(
                         ctx, 
                         canvasWidth, 
                         canvasHeight,
                         lines,
-                        lineHeight
+                        lineHeight,
+                        palette
                     )
                     
                 }
             }
         }, false);    
     }
+
+    return {
+        changeColorPalette: (newPalette) => {
+            // TODO: debouncer
+            palette = newPalette;
+            canvas.width = parentDiv.clientWidth;
+            canvas.height = parentDiv.clientHeight;
+            const newCtx = canvas.getContext("2d");
+            renderLines(
+                newCtx, 
+                canvas.offsetWidth, 
+                canvas.offsetHeight,
+                lines,
+                lineHeight,
+                newPalette
+            );
+        }
+    };
 }

@@ -44,6 +44,7 @@
 <body>
 
 <h1>InplaceQuicksort</h1>
+<button id="changePalette">Change Palette</button>
 
 <h2>ByChildrenCount</h2>
 <div id="inPlaceQuickSortByChildrenCount"></div>
@@ -66,7 +67,7 @@ function showNode(n) {
 }</pre>`;
 }
 
-loadData({
+const graphAHandler =  loadData({
     elementId: "inPlaceQuickSortByChildrenCount",
     data: data,
     graphType: "ChildrenCallCount",
@@ -76,7 +77,7 @@ loadData({
     lineHeight: 40
 });
 
-loadData({
+const graphBHandler = loadData({
     elementId: "inPlaceQuickSortByTimestamp",
     data: data,
     graphType: "Timestamp",
@@ -84,6 +85,25 @@ loadData({
     onClick: showNode,
     tooltip: (n) => `<div class="tooltip">${n.name}</div>`
 });
+
+const randomPalette = () => {
+  const paletteSize = 4; // Number of colors in the palette
+  const palette = [];
+  // Generate random colors
+  for (let i = 0; i < paletteSize; i++) {
+    const color = '#' + Math.floor(Math.random() * 16777215).toString(16); // Random hex color
+    palette.push(color);
+  }
+  return palette;
+};
+
+console.log(randomPalette());
+
+
+document.getElementById("changePalette").addEventListener("click", (e) => {
+    graphAHandler.changeColorPalette(randomPalette());
+    graphBHandler.changeColorPalette(randomPalette());
+})
 
 </script>
 
