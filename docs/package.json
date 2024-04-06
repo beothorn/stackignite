@@ -4,6 +4,7 @@
   "description": "Stack ignite docs",
   "main": "index.js",
   "scripts": {
+    "updateVersion": "npm install && cp node_modules/stackignite/index.js . && rm -rf node_modules",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "beothorn",
