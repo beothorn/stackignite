@@ -425,6 +425,7 @@ function loadData(config){
 
     if (config.onClick || config.zoomOnClick) {
         window.addEventListener('mousedown', function printCoords(e) {
+            if (e.button != 0) return;
             const pos = getMousePos(canvas, e);
             var canvasHeight = canvas.offsetHeight;
             const line  = Math.floor((canvasHeight - pos.y) / lineHeight);
