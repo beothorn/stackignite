@@ -499,4 +499,4 @@ function loadData(config){
     };
 }
 
-module.exports = loadData
+export { loadData };

@@ -54,8 +54,10 @@
 <p id="clickedNode"></p>
 
 <script type="text/javascript" src="filteredData.js"></script>
-<script type="text/javascript" src="./node_modules/stackignite/index.js"></script>
-<script>
+
+<script type="module">
+
+import { loadData } from './node_modules/stackignite/index.js';
 
 function showNode(n) {
     document.getElementById("clickedNode").innerHTML = `<pre>{
