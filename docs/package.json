@@ -1,0 +1,14 @@
+{
+  "name": "stackignitedocs",
+  "version": "1.0.0",
+  "description": "Stack ignite docs",
+  "main": "index.js",
+  "dependencies": {
+    "stackignite": "^1.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "beothorn",
+  "license": "Apache-2.0"
+}
